@@ -1,39 +1,28 @@
 package main
 
 import (
-	"fmt"
-
-	filemanager "github.com/baldeosinghm/task-tracker.git/fileManager"
+	filemanager "github.com/baldeosinghm/task-tracker.git/filemanager"
+	"github.com/baldeosinghm/task-tracker.git/iomanager"
 	"github.com/baldeosinghm/task-tracker.git/models"
 )
 
 // Create main function
 func main() {
-	fmt.Println("Select an option: ")
-	options := []string{
-		"add",
-		"update",
-		"delete",
-		"mark-in-progress",
-		"mark-done",
-		"list",
-		"list done",
-		"list in-progres"}
-	for _, value := range options {
-		fmt.Println(value)
-	}
+	iomanager.WelcomeMsg()
+	userInput, _ := iomanager.InputParser()
+	command, taskDetails := userInput[0], userInput[1:]
 
-	var choice string
-	fmt.Print("Your choice: ")
-	fmt.Scan(&choice) // We can get the stored value w/ the ampersand operator
+	// userInput[1:] is a slice, so you'll have to parse the slice for the update command
 
 	var task models.Task
-	fm := filemanager.New("counter_state", "tasks.json")
+	taskFile := filemanager.New("counter_state", "tasks.json")
 
-	switch choice {
+	switch command {
 	case "add":
-		task.Add()
+		task.Add(taskDetails)
 	case "list":
-		task.DisplayAll(fm)
+		task.ListAll(taskFile)
+		// case "update":
+		// 	task.Update(taskDetails)
 	}
 }

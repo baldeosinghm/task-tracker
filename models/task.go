@@ -1,13 +1,13 @@
 package models
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
-	filemanager "github.com/baldeosinghm/task-tracker.git/fileManager"
+	filemanager "github.com/baldeosinghm/task-tracker.git/filemanager"
 )
 
 type Task struct {
@@ -19,22 +19,14 @@ type Task struct {
 }
 
 // Create a task
-func (task Task) Add() error {
-	fmt.Print("add ")
-
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-
-	task.Description = scanner.Text()
+func (task Task) Add(details []string) error {
+	task.Description = strings.Join(details, " ")
 
 	// Store task in JSON file
-	taskFile := filemanager.New("counter_state", "tasks.json")
+	var taskFile filemanager.FileManager
+	taskFile.InputFilePath, taskFile.OutputFilePath = "counter_state.txt", "tasks.json"
 
-	id, err := taskFile.UpdateCount()
+	id, err := taskFile.GenerateID()
 	task.Status = "todo" // statuses: todo, in-progress, done
 
 	if err != nil {
@@ -49,7 +41,7 @@ func (task Task) Add() error {
 }
 
 // List all tasks
-func (task Task) DisplayAll(fm filemanager.FileManager) error {
+func (task Task) ListAll(fm filemanager.FileManager) error {
 	// Return if error file doesn't exist
 	file, err := os.ReadFile(fm.OutputFilePath)
 
@@ -73,3 +65,27 @@ func (task Task) DisplayAll(fm filemanager.FileManager) error {
 	fmt.Println(string(prettifiedFile))
 	return nil
 }
+
+// // Update task (change details)
+// func (task Task) Update() error {
+// 	// Read the file
+
+// 	// Parse IDs for requested task's id and description
+
+// 	// If after parsing there's no match, return error: unable to find id
+
+// 	// Return description matched to id
+
+// }
+
+// Delete task
+
+// Mark task as in progress
+
+// Mark task as done
+
+// List all tasks that are done
+
+// List all tasks not done
+
+// List all tasks in progress
