@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	filemanager "github.com/baldeosinghm/task-tracker.git/filemanager"
+	"github.com/baldeosinghm/task-tracker.git/filemanager"
 )
 
 type Task struct {
@@ -19,22 +19,19 @@ type Task struct {
 }
 
 // Create a task
-func (task Task) Add(details []string) error {
-	task.Description = strings.Join(details, " ")
-
-	// Store task in JSON file
-	var taskFile filemanager.FileManager
-	taskFile.InputFilePath, taskFile.OutputFilePath = "counter_state.txt", "tasks.json"
-
+func (task Task) Add(details []string, taskFile filemanager.FileManager) error {
 	id, err := taskFile.GenerateID()
-	task.Status = "todo" // statuses: todo, in-progress, done
 
 	if err != nil {
 		return err
 	}
 
 	task.ID = id
-	taskFile.SaveTask(task)
+	task.Description = strings.Join(details, " ")
+	task.Status = "todo" // statuses: todo, in-progress, done
+	task.CreatedAt = time.Now()
+	task.UpdatedAt = time.Now()
+	task.save(taskFile) // Save task in JSON file
 
 	fmt.Println("Task successfully created!")
 	return nil
@@ -49,14 +46,14 @@ func (task Task) ListAll(fm filemanager.FileManager) error {
 		return err
 	}
 
-	var taskStruct Task
-	err = json.Unmarshal(file, &taskStruct)
+	var tasks []Task
+	err = json.Unmarshal(file, &tasks)
 
 	if err != nil {
 		return err
 	}
 
-	prettifiedFile, err := json.MarshalIndent(taskStruct, "", " ")
+	prettifiedFile, err := json.MarshalIndent(tasks, "", " ")
 
 	if err != nil {
 		return err
@@ -66,17 +63,16 @@ func (task Task) ListAll(fm filemanager.FileManager) error {
 	return nil
 }
 
-// // Update task (change details)
-// func (task Task) Update() error {
-// 	// Read the file
-
-// 	// Parse IDs for requested task's id and description
-
-// 	// If after parsing there's no match, return error: unable to find id
-
-// 	// Return description matched to id
-
-// }
+// Save the task's fields to JSON file
+func (task Task) save(fm filemanager.FileManager) error {
+	if !fm.FileExists() {
+		// Create a new slice of type "Task" and initializes it with a single element, Task
+		fm.CreateFile([]Task{task})
+		return nil
+	}
+	fm.UpdateFile(task)
+	return nil
+}
 
 // Delete task
 

@@ -3,6 +3,7 @@ package filemanager
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -30,7 +31,7 @@ func (fm FileManager) GetCount() (int64, error) {
 	return count, nil
 }
 
-// Update the id count and return it as an id
+// Update id count in text file and return new count as an id
 func (fm FileManager) GenerateID() (int64, error) {
 	// Read file and get the count before it's updated
 	count, err := fm.GetCount()
@@ -44,63 +45,6 @@ func (fm FileManager) GenerateID() (int64, error) {
 	}
 
 	return count + 1, nil
-}
-
-// Save the task's fields to JSON file
-func (fm FileManager) SaveTask(data any) error {
-	// If there are zero tasks, create a file to store tasks using os.Create
-	// and pass a file path as the parameter
-	file, err := os.Create(fm.OutputFilePath)
-
-	// Check if any errors occurred during file creation due to file path
-	if err != nil {
-		return err
-	}
-
-	// Defer closing the file. You should always defer closing a file right
-	// after it has been created.
-	defer file.Close()
-
-	// If JSON file is empty, add new task without reading file
-	if FileExists(fm.OutputFilePath)
-
-
-	if isEmpty == true {
-		// Write to file using json's NewEncoder() package
-		encoder := json.NewEncoder(file) // Give location of the file to write to
-		err = encoder.Encode(data)       // Give data to put in JSON file
-
-		// Check for errors
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	// If JSON file isn't empty, read it
-	fileData, err := os.ReadFile(fm.OutputFilePath)
-
-	// Unmarshal data into map
-	var tasks map[string]any
-	json.Unmarshal(fileData, &tasks)
-	if err != nil {
-		return errors.New("Failed to parsed JSON-encoded data.")
-	}
-
-	// Marshal the modified struct back into a JSON formatted byte slice
-	updatedFileData, err := json.MarshalIndent(tasks, "", " ")
-	if err != nil {
-		return errors.New("Failed to write data to JSON file.")
-	}
-
-	// Write the new task to JSON file
-	err = os.WriteFile(fm.OutputFilePath, updatedFileData, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Read contents of JSON file and return it
@@ -120,13 +64,83 @@ func (fm FileManager) ReadJSONLines(task any) ([]string, error) {
 	return nil, nil
 }
 
-func FileExists(filePath string) bool {
-	_, err := os.Stat(filePath)
+// Create JSON file and write data to it.
+func (fm FileManager) CreateFile(data any) error {
+	file, err := os.Create(fm.OutputFilePath)
+
+	if err != nil {
+		return errors.New("Failed to create file.")
+	}
+
+	defer file.Close()
+
+	// JSON package, NewEncoder() that converts data into JSON format
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", " ")
+	err = encoder.Encode(data)
+
+	if err != nil {
+		return errors.New("Failed to convert data to JSON.")
+	}
+
+	return nil
+}
+
+// // Update JSON file with task
+func (fm *FileManager) UpdateFile(data any) error {
+	// Read the file
+	fileData, err := os.ReadFile(fm.OutputFilePath)
+	if err != nil {
+		return errors.New("Failed to read file.")
+	}
+
+	// Unmarshal existing data into a slice of maps
+	tasks := make([]map[string]any, 0, 10)
+	if len(fileData) > 0 {
+		err = json.Unmarshal(fileData, &tasks)
+		if err != nil {
+			return errors.New("Failed to parse JSON file.")
+		}
+	}
+
+	// Convert incoming data into a map via JSON round-trip
+	// This avoids importing the Task struct entirely
+	rawBytes, err := json.Marshal(data)
+	if err != nil {
+		return errors.New("Failed to marshal incoming data.")
+	}
+
+	var newEntry map[string]any
+	if err = json.Unmarshal(rawBytes, &newEntry); err != nil {
+		return errors.New("Failed to convert data to map.")
+	}
+
+	fmt.Println(newEntry)
+
+	// Append new task, data, to map tasks
+	tasks = append(tasks, newEntry)
+
+	// Marshal the modified struct back into a JSON formatted byte slice
+	updatedFileData, err := json.MarshalIndent(tasks, "", " ")
+	if err != nil {
+		return errors.New("Failed to marshal updated data.")
+	}
+
+	// Write the new task to JSON file
+	err = os.WriteFile(fm.OutputFilePath, updatedFileData, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fm FileManager) FileExists() bool {
+	_, err := os.Stat(fm.OutputFilePath)
 	if err == nil {
 		return true // File exists so no error
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		return False
+		return false
 	}
 	return false
 }

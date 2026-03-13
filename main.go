@@ -12,17 +12,13 @@ func main() {
 	userInput, _ := iomanager.InputParser()
 	command, taskDetails := userInput[0], userInput[1:]
 
-	// userInput[1:] is a slice, so you'll have to parse the slice for the update command
-
 	var task models.Task
-	taskFile := filemanager.New("counter_state", "tasks.json")
+	taskFile := filemanager.New("counter_state.txt", "tasks.json")
 
 	switch command {
 	case "add":
-		task.Add(taskDetails)
+		task.Add(taskDetails, taskFile)
 	case "list":
 		task.ListAll(taskFile)
-		// case "update":
-		// 	task.Update(taskDetails)
 	}
 }
