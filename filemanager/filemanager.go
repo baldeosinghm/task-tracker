@@ -3,7 +3,6 @@ package filemanager
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 )
@@ -47,23 +46,6 @@ func (fm FileManager) GenerateID() (int64, error) {
 	return count + 1, nil
 }
 
-// Read contents of JSON file and return it
-func (fm FileManager) ReadJSONLines(task any) ([]string, error) {
-	// Open file and read it's contents
-	file, err := os.ReadFile(fm.OutputFilePath)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshall json file to read contents
-	err = json.Unmarshal(file, task)
-
-	// Parse contents for two fields: id and description
-
-	return nil, nil
-}
-
 // Create JSON file and write data to it.
 func (fm FileManager) CreateFile(data any) error {
 	file, err := os.Create(fm.OutputFilePath)
@@ -86,25 +68,13 @@ func (fm FileManager) CreateFile(data any) error {
 	return nil
 }
 
-// // Update JSON file with task
+// Update JSON file with task
 func (fm *FileManager) UpdateFile(data any) error {
 	// Read the file
-	fileData, err := os.ReadFile(fm.OutputFilePath)
-	if err != nil {
-		return errors.New("Failed to read file.")
-	}
-
-	// Unmarshal existing data into a slice of maps
-	tasks := make([]map[string]any, 0, 10)
-	if len(fileData) > 0 {
-		err = json.Unmarshal(fileData, &tasks)
-		if err != nil {
-			return errors.New("Failed to parse JSON file.")
-		}
-	}
+	tasks, err := fm.Parser()
 
 	// Convert incoming data into a map via JSON round-trip
-	// This avoids importing the Task struct entirely
+	// This avoids import cycle from importing the Task struct entirely
 	rawBytes, err := json.Marshal(data)
 	if err != nil {
 		return errors.New("Failed to marshal incoming data.")
@@ -115,23 +85,46 @@ func (fm *FileManager) UpdateFile(data any) error {
 		return errors.New("Failed to convert data to map.")
 	}
 
-	fmt.Println(newEntry)
-
 	// Append new task, data, to map tasks
 	tasks = append(tasks, newEntry)
+	err = fm.WriteResult(tasks)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func (fm FileManager) WriteResult(tasks []map[string]any) error {
 	// Marshal the modified struct back into a JSON formatted byte slice
 	updatedFileData, err := json.MarshalIndent(tasks, "", " ")
 	if err != nil {
 		return errors.New("Failed to marshal updated data.")
 	}
 
-	// Write the new task to JSON file
-	err = os.WriteFile(fm.OutputFilePath, updatedFileData, 0644)
-	if err != nil {
-		return err
+	// NOTE: WriteFile will overwrite the JSON file
+	if err = os.WriteFile(fm.OutputFilePath, updatedFileData, 0644); err != nil {
+		return errors.New("Failed to write to JSON file.")
 	}
+
 	return nil
+}
+
+// Reads json file, parses it, and returns all tasks as a slice of maps
+func (fm FileManager) Parser() (tasks []map[string]any, err error) {
+	// Read json file
+	data, err := os.ReadFile(fm.OutputFilePath)
+	if err != nil {
+		return nil, errors.New("Failed to read file.")
+	}
+
+	// Unmarshall json file
+	var items []map[string]any
+	err = json.Unmarshal(data, &items)
+	if err != nil {
+		return nil, errors.New("Failed to parse JSON file.")
+	}
+
+	return items, nil
 }
 
 func (fm FileManager) FileExists() bool {

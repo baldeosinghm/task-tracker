@@ -18,7 +18,13 @@ func main() {
 	switch command {
 	case "add":
 		task.Add(taskDetails, taskFile)
+	case "update":
+		models.Update(taskDetails, taskFile)
+	case "delete":
+		models.Delete(taskDetails, taskFile)
+	case "mark-in-progress", "mark-done":
+		task.UpdateStatus(command, taskDetails, taskFile)
 	case "list":
-		task.ListAll(taskFile)
+		models.List(taskDetails, taskFile)
 	}
 }
