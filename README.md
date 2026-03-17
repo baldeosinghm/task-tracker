@@ -62,3 +62,7 @@ go run .
 ### Dependencies
 
 None; the tool doesn't make use of any external libraries.
+
+### Project Requirements
+
+https://roadmap.sh/projects/task-tracker

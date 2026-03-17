@@ -128,7 +128,7 @@ func (task Task) UpdateStatus(status string, taskDetails []string, taskFile file
 	return nil
 }
 
-// List all tasks
+// List all tasks, those that are done, or are in progress
 func List(taskDetails []string, taskFile filemanager.FileManager) error {
 	tasks, err := taskFile.Parser()
 	if err != nil {
@@ -196,9 +196,3 @@ func (task Task) save(fm filemanager.FileManager) error {
 	}
 	return nil
 }
-
-// List all tasks that are done
-
-// List all tasks not done
-
-// List all tasks in progress
